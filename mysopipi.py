@@ -1815,7 +1815,7 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller):
    
     # Load data
     df_order = pd.read_excel(file_order, dtype={'Total Harga Produk': str, 'Jumlah': str, 'Harga Satuan': str})
-    df_iklan = pd.read_csv(file_iklan, skiprows=7)
+    df_iklan = pd.read_csv(file_iklan, skiprows=None)
     
     if file_seller is not None:
         df_seller = pd.read_csv(file_seller, dtype={'Pengeluaran(Rp)': str})
@@ -2288,8 +2288,8 @@ def main():
                 try:
                     # Baca data
                     order_all_df = pd.read_excel(uploaded_order, dtype={'Harga Setelah Diskon': str, 'Total Harga Produk': str})
-                    income_dilepas_df = pd.read_excel(uploaded_income, sheet_name='Income', skiprows=5)
-                    iklan_produk_df = pd.read_csv(uploaded_iklan, skiprows=7)
+                    income_dilepas_df = pd.read_excel(uploaded_income, sheet_name='Income', skiprows=None)
+                    iklan_produk_df = pd.read_csv(uploaded_iklan, skiprows=None)
                     
                     if uploaded_seller:
                         seller_conversion_df = pd.read_csv(uploaded_seller)

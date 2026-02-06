@@ -1,6 +1,6 @@
 import streamlit as st
 st.set_page_config(
-    page_title="MYSOPIPI (Rekapanku & Iklanku)",
+    page_title="Mysopipi",
     page_icon="📊",
     layout="wide"
 )
@@ -2153,8 +2153,8 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller):
 # ============================================
 
 def main():
-    st.title("📊 Rekapanku & Iklanku (Shopee Only)")
-    st.markdown("Aplikasi gabungan untuk Laporan Iklan Harian dan Rekapan Mingguan Shopee")
+    st.title("📊 Mysopipi (Rekapanku & Iklanku Shopee Only")
+    st.markdown("Aplikasi untuk membuat Laporan Iklan Harian dan Rekapan Mingguan Shopee secara otomatis")
     st.markdown("---")
 
     # Pilihan Mode Utama

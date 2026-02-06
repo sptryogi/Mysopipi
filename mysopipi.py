@@ -2597,8 +2597,6 @@ def main():
             file_hourly = st.file_uploader("Upload 'Data Klik Views' (xlsx) - Hourly", type=['xlsx'], key='iklan_hourly')
 
         
-    file_hourly = st.file_uploader("Upload 'Data Klik Views' (xlsx) - Hourly", type=['xlsx'], key='iklan_hourly')
-
         if st.button("🚀 Mulai Proses Iklan Harian", type="primary", key='btn_iklan'):
             if file_order and file_iklan:
                 with st.spinner('Memproses data iklan harian...'):

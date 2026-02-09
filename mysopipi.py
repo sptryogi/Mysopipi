@@ -1798,11 +1798,11 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
             
     # 1. LOAD DATA
     df_order = pd.read_excel(file_order, dtype={'Total Harga Produk': str, 'Jumlah': str, 'Harga Satuan': str})
-    df_iklan = pd.read_csv(file_iklan, skiprows=None)
+    df_iklan = pd.read_excel(file_iklan, skiprows=None)
     
     # Cek apakah file_seller ada isinya (Optional)
     if file_seller is not None:
-        df_seller = pd.read_csv(file_seller, dtype={'Pengeluaran(Rp)': str})
+        df_seller = pd.read_excel(file_seller, dtype={'Pengeluaran(Rp)': str})
     else:
         # Jika tidak ada, buat DataFrame kosong dengan kolom minimal agar tidak error saat merge
         df_seller = pd.DataFrame(columns=['Kode Pesanan', 'Pengeluaran(Rp)'])
@@ -2591,9 +2591,9 @@ def main():
         col1, col2 = st.columns(2)
         with col1:
             file_order = st.file_uploader("Upload 'Order-all' (xlsx)", type=['xlsx'], key='iklan_order')
-            file_iklan = st.file_uploader("Upload 'Iklan Keseluruhan' (csv)", type=['csv'], key='iklan_iklan')
+            file_iklan = st.file_uploader("Upload 'Iklan Keseluruhan' (xlsx)", type=['xlsx'], key='iklan_iklan')
         with col2:
-            file_seller = st.file_uploader("Upload 'Seller conversion' (csv) - Opsional", type=['csv'], key='iklan_seller')
+            file_seller = st.file_uploader("Upload 'Seller conversion' (xlsx) - Opsional", type=['xlsx'], key='iklan_seller')
             file_hourly = st.file_uploader("Upload 'Data Klik Views' (xlsx) - Hourly", type=['xlsx'], key='iklan_hourly')
 
         
@@ -2679,8 +2679,8 @@ def main():
             uploaded_order = st.file_uploader("1. Import file order-all.xlsx", type="xlsx", key='rekap_order')
             uploaded_income = st.file_uploader("2. Import file income dilepas.xlsx", type="xlsx", key='rekap_income')
         with col2:
-            uploaded_iklan = st.file_uploader("3. Import file iklan produk (csv)", type="csv", key='rekap_iklan')
-            uploaded_seller = st.file_uploader("4. Import file seller conversion (csv)", type="csv", key='rekap_seller')
+            uploaded_iklan = st.file_uploader("3. Import file iklan produk (xlsx)", type="xlsx", key='rekap_iklan')
+            uploaded_seller = st.file_uploader("4. Import file seller conversion (xlsx)", type="xlsx", key='rekap_seller')
 
         if st.button("🚀 Mulai Proses Rekapan Mingguan", type="primary", key='btn_rekap'):
             # Validasi file wajib
@@ -2700,10 +2700,10 @@ def main():
                     # Baca data
                     order_all_df = pd.read_excel(uploaded_order, dtype={'Harga Setelah Diskon': str, 'Total Harga Produk': str})
                     income_dilepas_df = pd.read_excel(uploaded_income, sheet_name='Income', skiprows=None)
-                    iklan_produk_df = pd.read_csv(uploaded_iklan, skiprows=None)
+                    iklan_produk_df = pd.read_excel(uploaded_iklan, skiprows=None)
                     
                     if uploaded_seller:
-                        seller_conversion_df = pd.read_csv(uploaded_seller)
+                        seller_conversion_df = pd.read_excel(uploaded_seller)
                     else:
                         seller_conversion_df = pd.DataFrame(columns=['Kode Pesanan', 'Pengeluaran(Rp)'])
 

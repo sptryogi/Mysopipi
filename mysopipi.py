@@ -1833,6 +1833,13 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
             st.warning(f"⚠️ Gagal membaca file hourly: {e}")
             df_hourly = None
 
+    if df_hourly is not None:
+        st.write("DEBUG df_hourly (3 baris pertama):")
+        st.write(df_hourly[['Jam WIB', 'Lihat', 'Klik']].head(3))
+    
+        st.write("DEBUG tipe data df_hourly:")
+        st.write(df_hourly[['Jam WIB', 'Lihat', 'Klik']].dtypes)
+
     # 2. PRE-PROCESS ORDER-ALL
     # Filter Status Pesanan != Batal dan Belum Bayar
     if 'Status Pesanan' in df_order.columns:
@@ -1986,9 +1993,19 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
         # Fill NaN dengan 0 untuk kolom LIHAT dan KLIK
         merged['LIHAT'] = merged['LIHAT'].fillna(0).astype(int)
         merged['KLIK'] = merged['KLIK'].fillna(0).astype(int)
+
+        st.write("DEBUG setelah merge hourly (3 baris):")
+        st.write(
+            merged[['Jam', 'LIHAT', 'KLIK']]
+            .head(3)
+        )
         
         return merged.fillna(0)
 
+    st.write("DEBUG Jam dari df_ads_orders:")
+    st.write(df_ads_orders[['Jam']].drop_duplicates().sort_values('Jam').head(10))
+    st.write("Tipe data Jam:", df_ads_orders['Jam'].dtype)
+    
     tbl_iklan_data = agg_fixed_hours(df_ads_orders)
 
     # B. TABEL DINAMIS (AFFILIATE & ORGANIK)

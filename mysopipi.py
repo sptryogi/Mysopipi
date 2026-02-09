@@ -1812,25 +1812,49 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
     df_hourly = None
     if file_hourly is not None:
         try:
+            # ✅ PERBAIKAN: Baca sheet 'Hourly_Performance' dan skip header row jika perlu
             df_hourly = pd.read_excel(file_hourly, sheet_name='Hourly_Performance')
+            
+            # ✅ PERBAIKAN: Hapus baris pertama jika itu adalah header duplikat (seperti di file contoh)
+            if df_hourly.iloc[0].astype(str).str.contains('Jam WIB|Lihat|Klik').any():
+                df_hourly = df_hourly.iloc[1:].reset_index(drop=True)
+            
             # Bersihkan nama kolom
             df_hourly.columns = df_hourly.columns.str.strip()
             
+            # ✅ DEBUG: Tampilkan kolom yang terdeteksi
+            st.write("📊 Kolom Hourly terdeteksi:", df_hourly.columns.tolist())
+            st.write("📊 Sample data hourly:", df_hourly.head())
+            
             # Pastikan kolom yang dibutuhkan ada
             if 'Jam WIB' in df_hourly.columns and 'Lihat' in df_hourly.columns and 'Klik' in df_hourly.columns:
-                # Konversi Jam WIB ke integer
-                df_hourly['Jam WIB'] = pd.to_numeric(df_hourly['Jam WIB'], errors='coerce')
+                # ✅ PERBAIKAN: Konversi Jam WIB - handle format "00:00" atau integer
+                def parse_jam_wib(val):
+                    if pd.isna(val):
+                        return np.nan
+                    val_str = str(val).strip()
+                    # Jika format "00:00", ambil jamnya saja
+                    if ':' in val_str:
+                        return int(val_str.split(':')[0])
+                    # Jika sudah integer/float
+                    return int(float(val_str))
+                
+                df_hourly['Jam WIB'] = df_hourly['Jam WIB'].apply(parse_jam_wib)
                 df_hourly = df_hourly.dropna(subset=['Jam WIB'])
                 df_hourly['Jam WIB'] = df_hourly['Jam WIB'].astype(int)
                 
-                # Konversi Lihat dan Klik ke numerik
+                # ✅ PERBAIKAN: Konversi Lihat dan Klik ke numerik dengan lebih robust
                 for col in ['Lihat', 'Klik']:
-                    df_hourly[col] = pd.to_numeric(df_hourly[col], errors='coerce').fillna(0)
+                    df_hourly[col] = pd.to_numeric(df_hourly[col], errors='coerce').fillna(0).astype(int)
+                
+                st.success(f"✅ Data hourly berhasil dimuat: {len(df_hourly)} jam")
             else:
                 st.warning("⚠️ Sheet 'Hourly_Performance' tidak memiliki kolom 'Jam WIB', 'Lihat', atau 'Klik'")
                 df_hourly = None
         except Exception as e:
             st.warning(f"⚠️ Gagal membaca file hourly: {e}")
+            import traceback
+            st.error(traceback.format_exc())
             df_hourly = None
 
     if df_hourly is not None:
@@ -1979,20 +2003,19 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
         # TAMBAHAN: MERGE DENGAN DATA HOURLY (VIEWS & CLICKS)
         # ============================================================
         if df_hourly is not None and not df_hourly.empty:
-            # Pastikan tipe data sama untuk merge
-            df_hourly_copy = df_hourly.copy()
-            df_hourly_copy['Jam WIB'] = df_hourly_copy['Jam WIB'].astype(int)
-            merged['Jam'] = merged['Jam'].astype(int)
+            # ✅ DEBUG: Tampilkan data sebelum merge
+            st.write("📊 Data hourly sebelum merge:", df_hourly[['Jam WIB', 'Lihat', 'Klik']].head())
+            st.write("📊 Data merged sebelum merge:", merged[['Jam']].head())
             
-            # Merge dengan left join
-            merged = merged.merge(
-                df_hourly_copy[['Jam WIB', 'Lihat', 'Klik']].rename(columns={'Jam WIB': 'Jam'}),
-                on='Jam',
-                how='left'
-            )
+            # ✅ PERBAIKAN: Pastikan tipe data sama untuk merge
+            df_hourly_merge = df_hourly[['Jam WIB', 'Lihat', 'Klik']].copy()
+            df_hourly_merge = df_hourly_merge.rename(columns={'Jam WIB': 'Jam', 'Lihat': 'LIHAT', 'Klik': 'KLIK'})
             
-            # Rename kolom ke uppercase untuk konsistensi
-            merged = merged.rename(columns={'Lihat': 'LIHAT', 'Klik': 'KLIK'})
+            # ✅ PERBAIKAN: Merge dengan left join
+            merged = merged.merge(df_hourly_merge, on='Jam', how='left')
+            
+            # ✅ DEBUG: Tampilkan hasil merge
+            st.write("📊 Data setelah merge:", merged[['Jam', 'LIHAT', 'KLIK']].head())
         else:
             merged['LIHAT'] = 0
             merged['KLIK'] = 0
@@ -2000,12 +2023,9 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
         # ✅ PERBAIKAN: Fill NaN dengan 0 untuk kolom LIHAT dan KLIK
         merged['LIHAT'] = merged['LIHAT'].fillna(0).astype(int)
         merged['KLIK'] = merged['KLIK'].fillna(0).astype(int)
-
-        st.write("DEBUG setelah merge hourly (3 baris):")
-        st.write(
-            merged[['Jam', 'LIHAT', 'KLIK']]
-            .head(3)
-        )
+        
+        # ✅ DEBUG: Tampilkan hasil akhir
+        st.write("📊 Hasil akhir Tabel 1 (sample):", merged[['Jam', 'LIHAT', 'KLIK', 'PESANAN']].head())
         
         return merged.fillna(0)
 
@@ -2310,6 +2330,7 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
     ws_lap.merge_range(start_row, 0, start_row, 6, 'PESANAN IKLAN', fmt_head_orange)
     ws_lap.merge_range(start_row+1, 0, start_row+2, 6, report_date, fmt_date)
     
+
     cols_t1 = ['JAM', 'LIHAT', 'KLIK', 'PESANAN', 'KUANTITAS', 'OMZET PENJUALAN', 'JUMLAH EKSEMPLAR']
     for i, col in enumerate(cols_t1):
         ws_lap.write(start_row+3, i, col, fmt_col_name)
@@ -2324,18 +2345,19 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
         ws_lap.write(row_cursor, 0, jam_str, fmt_num)
         update_width(0, jam_str)
         
-        ws_lap.write(row_cursor, 1, row['LIHAT'], fmt_num)
-        ws_lap.write(row_cursor, 2, row['KLIK'], fmt_num)
-        ws_lap.write(row_cursor, 3, row['PESANAN'], fmt_num)
-        ws_lap.write(row_cursor, 4, row['KUANTITAS'], fmt_num)
+        # ✅ PASTIKAN: Urutan kolom sesuai dengan definisi cols_t1
+        ws_lap.write(row_cursor, 1, int(row['LIHAT']), fmt_num)      # LIHAT
+        ws_lap.write(row_cursor, 2, int(row['KLIK']), fmt_num)       # KLIK
+        ws_lap.write(row_cursor, 3, int(row['PESANAN']), fmt_num)    # PESANAN
+        ws_lap.write(row_cursor, 4, int(row['KUANTITAS']), fmt_num)  # KUANTITAS
         ws_lap.write(row_cursor, 5, row['OMZET PENJUALAN'], fmt_curr)
-        ws_lap.write(row_cursor, 6, row['JUMLAH EKSEMPLAR'], fmt_num)
+        ws_lap.write(row_cursor, 6, int(row['JUMLAH EKSEMPLAR']), fmt_num)
 
         # Update widths
-        update_width(1, row['LIHAT'])
-        update_width(2, row['KLIK'])
-        update_width(3, row['PESANAN'])
-        update_width(4, row['KUANTITAS'])
+        update_width(1, str(int(row['LIHAT'])))
+        update_width(2, str(int(row['KLIK'])))
+        update_width(3, str(int(row['PESANAN'])))
+        update_width(4, str(int(row['KUANTITAS'])))
         update_width(5, f"{row['OMZET PENJUALAN']:,}")
         
         row_cursor += 1
@@ -2343,15 +2365,15 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
     # Total Tabel 1
     ws_lap.write(row_cursor, 0, "TOTAL", fmt_col_name)
 
-    total_lihat = tbl_iklan_data['LIHAT'].sum()
-    total_klik = tbl_iklan_data['KLIK'].sum()
+    total_lihat = int(tbl_iklan_data['LIHAT'].sum())
+    total_klik = int(tbl_iklan_data['KLIK'].sum())
 
     ws_lap.write(row_cursor, 1, total_lihat, fmt_col_name) # Total Lihat
     ws_lap.write(row_cursor, 2, total_klik, fmt_col_name)    # Total Klik
-    ws_lap.write(row_cursor, 3, tbl_iklan_data['PESANAN'].sum(), fmt_col_name)
-    ws_lap.write(row_cursor, 4, tbl_iklan_data['KUANTITAS'].sum(), fmt_col_name)
+    ws_lap.write(row_cursor, 3, int(tbl_iklan_data['PESANAN'].sum()), fmt_col_name)
+    ws_lap.write(row_cursor, 4, int(tbl_iklan_data['KUANTITAS'].sum()), fmt_col_name)
     ws_lap.write(row_cursor, 5, tbl_iklan_data['OMZET PENJUALAN'].sum(), fmt_col_name)
-    ws_lap.write(row_cursor, 6, tbl_iklan_data['JUMLAH EKSEMPLAR'].sum(), fmt_col_name)
+    ws_lap.write(row_cursor, 6, int(tbl_iklan_data['JUMLAH EKSEMPLAR'].sum()), fmt_col_name)
     update_width(5, f"{tbl_iklan_data['OMZET PENJUALAN'].sum():,}")
     
     # --- TABEL 2: RINCIAN IKLAN KLIK (G-H) ---

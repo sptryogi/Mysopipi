@@ -1979,18 +1979,25 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
         # TAMBAHAN: MERGE DENGAN DATA HOURLY (VIEWS & CLICKS)
         # ============================================================
         if df_hourly is not None and not df_hourly.empty:
+            # Pastikan tipe data sama untuk merge
+            df_hourly_copy = df_hourly.copy()
+            df_hourly_copy['Jam WIB'] = df_hourly_copy['Jam WIB'].astype(int)
+            merged['Jam'] = merged['Jam'].astype(int)
+            
+            # Merge dengan left join
             merged = merged.merge(
-                df_hourly[['Jam WIB', 'Lihat', 'Klik']].rename(columns={'Jam WIB': 'Jam'}),
+                df_hourly_copy[['Jam WIB', 'Lihat', 'Klik']].rename(columns={'Jam WIB': 'Jam'}),
                 on='Jam',
                 how='left'
             )
+            
             # Rename kolom ke uppercase untuk konsistensi
             merged = merged.rename(columns={'Lihat': 'LIHAT', 'Klik': 'KLIK'})
         else:
             merged['LIHAT'] = 0
             merged['KLIK'] = 0
             
-        # Fill NaN dengan 0 untuk kolom LIHAT dan KLIK
+        # ✅ PERBAIKAN: Fill NaN dengan 0 untuk kolom LIHAT dan KLIK
         merged['LIHAT'] = merged['LIHAT'].fillna(0).astype(int)
         merged['KLIK'] = merged['KLIK'].fillna(0).astype(int)
 

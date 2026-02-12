@@ -1822,10 +1822,6 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
             # Bersihkan nama kolom
             df_hourly.columns = df_hourly.columns.str.strip()
             
-            # ✅ DEBUG: Tampilkan kolom yang terdeteksi
-            st.write("📊 Kolom Hourly terdeteksi:", df_hourly.columns.tolist())
-            st.write("📊 Sample data hourly:", df_hourly.head())
-            
             # Pastikan kolom yang dibutuhkan ada
             if 'Jam WIB' in df_hourly.columns and 'Lihat' in df_hourly.columns and 'Klik' in df_hourly.columns:
                 # ✅ PERBAIKAN: Konversi Jam WIB - handle format "00:00" atau integer
@@ -1847,7 +1843,6 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
                 for col in ['Lihat', 'Klik']:
                     df_hourly[col] = pd.to_numeric(df_hourly[col], errors='coerce').fillna(0).astype(int)
                 
-                st.success(f"✅ Data hourly berhasil dimuat: {len(df_hourly)} jam")
             else:
                 st.warning("⚠️ Sheet 'Hourly_Performance' tidak memiliki kolom 'Jam WIB', 'Lihat', atau 'Klik'")
                 df_hourly = None
@@ -1857,12 +1852,6 @@ def process_data_iklan_harian(toko, file_order, file_iklan, file_seller, file_ho
             st.error(traceback.format_exc())
             df_hourly = None
 
-    if df_hourly is not None:
-        st.write("DEBUG df_hourly (3 baris pertama):")
-        st.write(df_hourly[['Jam WIB', 'Lihat', 'Klik']].head(3))
-    
-        st.write("DEBUG tipe data df_hourly:")
-        st.write(df_hourly[['Jam WIB', 'Lihat', 'Klik']].dtypes)
 
     # 2. PRE-PROCESS ORDER-ALL
     # Filter Status Pesanan != Batal dan Belum Bayar
